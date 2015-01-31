@@ -1,7 +1,4 @@
 # gdal2tiles-leaflet
-<<<<<<< HEAD
-Generate raster image tiles for use with leaflet.
-=======
 
 > Generate raster image tiles for use with leaflet.
 
@@ -28,9 +25,12 @@ See [test/createtiles.sh](test/createtiles.sh).
 **Note:** The max zoom must be greater or equal to `log2(min(width, height)/tilesize)`
 
 Assuming an image with 3000x2000 pixels:
+
 ````
-$ echo l(2000/256)/l(2) | bc -l
+$ echo "l(2000/256)/l(2)" | bc -l
 # 2.965 --> minimum maxZoom is 3
+# means: `gdal2tiles.py -l -p raster -z 0-2 ...`
+#                                          \__ is not allowed
 ````
 
 ## Usage with Leaflet
@@ -47,7 +47,7 @@ to correctly set the required projection [rastercoords.js](rastercoords.js).
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 		<link rel="stylesheet" href="leaflet-0.7.3/leaflet.css" />
 		<script src="leaflet-0.7.3/leaflet-src.js"></script>
-		<script src="../rastercoords.js"></script>
+		<script src="rastercoords.js"></script>
 		<script src="index.js"></script>
 		<style>
 			html, body, #map { width:100%; height:100%; margin:0; padding:0; background-color: #B0B0B0 }
@@ -79,7 +79,7 @@ function init() {
 	// assign map and image dimensions
 	var rc = new L.RasterCoords(map, img);
 	// set the bounds on map
-	rc.setMaxBounds(map);
+	rc.setMaxBounds();
 
 	// set the view centered ...
 	map.setView(rc.unproject([img[0]/2, img[1]/2]), 5);
@@ -125,7 +125,7 @@ $ ./createtiles.sh
 $ open index.html
 ````
 
-Then open `index.html` in a your browser.
+Then open `index.html` in a browser.
 
 ## Contribution and License Agreement
 
@@ -136,16 +136,19 @@ with the source of its origin and licence.
 
 ## License
 
-gdal2tiles.py
-	Copyright (c) 2008, Klokan Petr Pridal
-	Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
+gdal2tiles.py:
+* Copyright (c) 2008, Klokan Petr Pridal
+* Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
 
-rastercoords.js + sample
-	Copyright (c) 2015 commenthol
+rastercoords.js + sample:
+* Copyright (c) 2015 commenthol
+
+leaflet for sample
+* Copyright (c) 2010-2015, Vladimir Agafonkin
+* Copyright (c) 2010-2011, CloudMade
 
 See [LICENSE][] for more info.
 
 [LICENSE]: ./LICENSE
 [leafletjs]: http://leafletjs.com
 [gdal2tiles.py]: http://download.osgeo.org/gdal/1.11.1/gdal-1.11.1.tar.gz "/gdal-1.11.1/swig/python/scripts/gdal2tiles.py"
->>>>>>> first version

@@ -22,7 +22,7 @@ function init() {
 	// assign map and image dimensions
 	var rc = new L.RasterCoords(map, img);
 	// set the bounds on map
-	rc.setMaxBounds(map);
+	rc.setMaxBounds();
 
 	// set the view on a marker ...
 	map.setView(rc.unproject([1589, 1447]), 5);
