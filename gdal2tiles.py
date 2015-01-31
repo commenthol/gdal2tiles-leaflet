@@ -1030,6 +1030,9 @@ gdal2tiles temp.vrt""" % self.input )
             self.nativezoom = int(max( math.ceil(log2(self.out_ds.RasterXSize/float(self.tilesize))),
                                        math.ceil(log2(self.out_ds.RasterYSize/float(self.tilesize)))))
 
+            if self.tmaxz < self.nativezoom:
+                self.error("Max. Zoom to low. Needs to be >= %s !" % self.nativezoom)
+
             if self.options.verbose:
                 print("Native zoom of the raster:", self.nativezoom)
 
