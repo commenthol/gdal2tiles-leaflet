@@ -9,21 +9,27 @@
  * L.RasterCoords
  * @param {L.map} map - the map used
  * @param {Array} imgsize - [ width, height ] image dimensions
+ * @param {Number} [tilesize] - tilesize in pixels. Default=256
  */
-L.RasterCoords = function (map, imgsize) {
+L.RasterCoords = function (map, imgsize, tilesize) {
 	this.map = map;
 	this.width = imgsize[0];
 	this.height = imgsize[1];
-	this.zoom = this._zoomLevel();
+	this.tilesize = tilesize || 256;
+	this.zoom = this.zoomLevel();
 };
 
 L.RasterCoords.prototype = {
 	/*
 	 * calculate accurate zoom level for the given image size
 	 */
-	_zoomLevel: function() {
-		var tilesize = 256;
-		return Math.ceil(Math.log(Math.floor(Math.min(this.width, this.height)/tilesize))/Math.log(2));
+	zoomLevel: function() {
+		return Math.ceil(
+					Math.log(
+						Math.max(this.width, this.height)/
+						this.tilesize
+					)/Math.log(2)
+				);
 	},
 	/*
 	 * unproject `coords` to the raster coordinates used by the raster image projection
