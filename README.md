@@ -114,7 +114,7 @@ function init() {
 
 Please check the example in folder [test](test) which uses [Leaflet 0.7.3][leafletjs].
 
-![The sample in test](test.png)
+[![The sample in test](test.png)](https://commenthol.github.io/gdal2tiles-leaflet/test/index.html)
 
 ## Example
 
@@ -137,14 +137,14 @@ with the source of its origin and licence.
 
 ## License
 
-gdal2tiles.py:
+gdal2tiles.py: (MIT licensed)
 * Copyright (c) 2008, Klokan Petr Pridal
-* Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
+* Copyright (c) 2010-2013, Even Rouault
 
-rastercoords.js + sample:
+rastercoords.js + sample: (MIT licensed)
 * Copyright (c) 2015 commenthol
 
-leaflet for sample
+leaflet for sample: [(License)](https://github.com/Leaflet/Leaflet/blob/master/LICENSE)
 * Copyright (c) 2010-2015, Vladimir Agafonkin
 * Copyright (c) 2010-2011, CloudMade
 
