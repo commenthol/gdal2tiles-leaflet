@@ -20,15 +20,6 @@ the full-size image.
 $ gdal2tiles.py -l -p raster -z 0-5 -w none karta.jpg tiles
 ````
 
-## Multicore usage
-
-````
-$ gdal2tiles-multiprocess.py -l -p raster -z 0-5 -w none karta.jpg tilesc 
-````
-
-
-
-
 See [test/createtiles.sh](test/createtiles.sh).
 
 **Note:** The min zoom level for tile generation must be greater or
@@ -41,6 +32,14 @@ $ echo "l(3000/256)/l(2)" | bc -l
 # 3.55 --> min zoomlevel for tile generation is 4
 # means: `gdal2tiles.py -l -p raster -z 0-2 ...`
 #                                          \__ is not allowed
+````
+
+## Multicore usage
+
+The same works with multicore support, thanks to [gdal2tiles-Ticket-4379][].
+
+````
+$ gdal2tiles-multiprocess.py -l -p raster -z 0-5 -w none karta.jpg tiles
 ````
 
 ## Usage with Leaflet
@@ -123,8 +122,6 @@ function init() {
 
 Please check the example in folder [test](test) which uses [Leaflet 0.7.3][leafletjs].
 
-[![The sample in test](test.png)](https://commenthol.github.io/gdal2tiles-leaflet/test/index.html)
-
 ## Example
 
 To run the example you'll need to generate the tiles for the large image first.
@@ -136,6 +133,11 @@ $ open index.html
 ````
 
 Then open `index.html` in a browser.
+
+[![The sample in test](test.png)][example]
+
+Or see it [here][example] in action.
+
 
 ## Contribution and License Agreement
 
@@ -162,3 +164,5 @@ See [LICENSE][] for more info.
 [LICENSE]: ./LICENSE
 [leafletjs]: http://leafletjs.com
 [gdal2tiles.py]: http://download.osgeo.org/gdal/1.11.1/gdal-1.11.1.tar.gz "/gdal-1.11.1/swig/python/scripts/gdal2tiles.py"
+[gdal2tiles-Ticket-4379]: http://trac.osgeo.org/gdal/ticket/4379
+[example]: https://commenthol.github.io/gdal2tiles-leaflet/test/index.html
