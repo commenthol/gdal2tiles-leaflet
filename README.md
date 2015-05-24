@@ -20,6 +20,15 @@ the full-size image.
 $ gdal2tiles.py -l -p raster -z 0-5 -w none karta.jpg tiles
 ````
 
+## Multicore usage
+
+````
+gdal2tiles-multiprocess.py -l -p raster -z 0-5 -w none karta.jpg tilesc 
+````
+
+
+
+
 See [test/createtiles.sh](test/createtiles.sh).
 
 **Note:** The min zoom level for tile generation must be greater or
