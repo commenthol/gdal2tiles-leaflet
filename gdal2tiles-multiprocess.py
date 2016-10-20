@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #******************************************************************************
 #  $Id: gdal2tiles.py 19288 2010-04-02 18:36:17Z rouault $
-# 
+#
 # Project:  Google Summer of Code 2007, 2008 (http://code.google.com/soc/)
 # Support:  BRGM (http://www.brgm.fr)
 # Purpose:  Convert a raster into TMS (Tile Map Service) tiles in a directory.
@@ -15,17 +15,17 @@
 #
 ###############################################################################
 # Copyright (c) 2008, Klokan Petr Pridal
-# 
+#
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
 #  to deal in the Software without restriction, including without limitation
 #  the rights to use, copy, modify, merge, publish, distribute, sublicense,
 #  and/or sell copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following conditions:
-# 
+#
 #  The above copyright notice and this permission notice shall be included
 #  in all copies or substantial portions of the Software.
-# 
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 #  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 #  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
@@ -118,20 +118,20 @@ class GlobalMercator(object):
 	Such tiles are compatible with Google Maps, Microsoft Virtual Earth, Yahoo Maps,
 	UK Ordnance Survey OpenSpace API, ...
 	and you can overlay them on top of base maps of those web mapping applications.
-	
+
 	Pixel and tile coordinates are in TMS notation (origin [0,0] in bottom-left).
 
 	What coordinate conversions do we need for TMS Global Mercator tiles::
 
-	     LatLon      <->       Meters      <->     Pixels    <->       Tile     
+	     LatLon      <->       Meters      <->     Pixels    <->       Tile
 
 	 WGS84 coordinates   Spherical Mercator  Pixels in pyramid  Tiles in pyramid
-	     lat/lon            XY in metres     XY pixels Z zoom      XYZ from TMS 
-	    EPSG:4326           EPSG:900913                                         
-	     .----.              ---------               --                TMS      
-	    /      \     <->     |       |     <->     /----/    <->      Google    
-	    \      /             |       |           /--------/          QuadTree   
-	     -----               ---------         /------------/                   
+	     lat/lon            XY in metres     XY pixels Z zoom      XYZ from TMS
+	    EPSG:4326           EPSG:900913
+	     .----.              ---------               --                TMS
+	    /      \     <->     |       |     <->     /----/    <->      Google
+	    \      /             |       |           /--------/          QuadTree
+	     -----               ---------         /------------/
 	   KML, public         WebMapService         Web Clients      TileMapService
 
 	What is the coordinate extent of Earth in EPSG:900913?
@@ -164,7 +164,7 @@ class GlobalMercator(object):
 	  Well, the web clients like Google Maps are projecting those coordinates by
 	  Spherical Mercator, so in fact lat/lon coordinates on sphere are treated as if
 	  the were on the WGS84 ellipsoid.
-	 
+
 	  From MSDN documentation:
 	  To simplify the calculations, we use the spherical form of projection, not
 	  the ellipsoidal form. Since the projection is used only for map display,
@@ -238,15 +238,15 @@ class GlobalMercator(object):
 		mx = px * res - self.originShift
 		my = py * res - self.originShift
 		return mx, my
-		
+
 	def MetersToPixels(self, mx, my, zoom):
 		"Converts EPSG:900913 to pyramid pixel coordinates in given zoom level"
-				
+
 		res = self.Resolution( zoom )
 		px = (mx + self.originShift) / res
 		py = (my + self.originShift) / res
 		return px, py
-	
+
 	def PixelsToTile(self, px, py):
 		"Returns a tile covering region in given pixel coordinates"
 
@@ -256,19 +256,19 @@ class GlobalMercator(object):
 
 	def PixelsToRaster(self, px, py, zoom):
 		"Move the origin of pixel coordinates to top-left corner"
-		
+
 		mapSize = self.tileSize << zoom
 		return px, mapSize - py
-		
+
 	def MetersToTile(self, mx, my, zoom):
 		"Returns tile for given mercator coordinates"
-		
+
 		px, py = self.MetersToPixels( mx, my, zoom)
 		return self.PixelsToTile( px, py)
 
 	def TileBounds(self, tx, ty, zoom):
 		"Returns bounds of the given tile in EPSG:900913 coordinates"
-		
+
 		minx, miny = self.PixelsToMeters( tx*self.tileSize, ty*self.tileSize, zoom )
 		maxx, maxy = self.PixelsToMeters( (tx+1)*self.tileSize, (ty+1)*self.tileSize, zoom )
 		return ( minx, miny, maxx, maxy )
@@ -279,34 +279,34 @@ class GlobalMercator(object):
 		bounds = self.TileBounds( tx, ty, zoom)
 		minLat, minLon = self.MetersToLatLon(bounds[0], bounds[1])
 		maxLat, maxLon = self.MetersToLatLon(bounds[2], bounds[3])
-		 
+
 		return ( minLat, minLon, maxLat, maxLon )
-		
+
 	def Resolution(self, zoom ):
 		"Resolution (meters/pixel) for given zoom level (measured at Equator)"
-		
+
 		# return (2 * math.pi * 6378137) / (self.tileSize * 2**zoom)
 		return self.initialResolution / (2**zoom)
-		
+
 	def ZoomForPixelSize(self, pixelSize ):
 		"Maximal scaledown zoom of the pyramid closest to the pixelSize."
-		
+
 		for i in range(MAXZOOMLEVEL):
 			if pixelSize > self.Resolution(i):
 				if i!=0:
 					return i-1
 				else:
 					return 0 # We don't want to scale up
-		
+
 	def GoogleTile(self, tx, ty, zoom):
 		"Converts TMS tile coordinates to Google Tile coordinates"
-		
+
 		# coordinate origin is moved from bottom-left to top-left corner of the extent
 		return tx, (2**zoom - 1) - ty
 
 	def QuadTree(self, tx, ty, zoom ):
 		"Converts TMS tile coordinates to Microsoft QuadTree"
-		
+
 		quadKey = ""
 		ty = (2**zoom - 1) - ty
 		for i in range(zoom, 0, -1):
@@ -317,7 +317,7 @@ class GlobalMercator(object):
 			if (ty & mask) != 0:
 				digit += 2
 			quadKey += str(digit)
-			
+
 		return quadKey
 
 #---------------------
@@ -332,7 +332,7 @@ class GlobalGeodetic(object):
 
 	Such tiles are compatible with Google Earth (as any other EPSG:4326 rasters)
 	and you can overlay the tiles on top of OpenLayers base map.
-	
+
 	Pixel and tile coordinates are in TMS notation (origin [0,0] in bottom-left).
 
 	What coordinate conversions do we need for TMS Global Geodetic tiles?
@@ -345,15 +345,15 @@ class GlobalGeodetic(object):
 	  TMS has coordinate origin (for pixels and tiles) in bottom-left corner.
 	  Rasters are in EPSG:4326 and therefore are compatible with Google Earth.
 
-	     LatLon      <->      Pixels      <->     Tiles     
+	     LatLon      <->      Pixels      <->     Tiles
 
 	 WGS84 coordinates   Pixels in pyramid  Tiles in pyramid
-	     lat/lon         XY pixels Z zoom      XYZ from TMS 
-	    EPSG:4326                                           
-	     .----.                ----                         
-	    /      \     <->    /--------/    <->      TMS      
-	    \      /         /--------------/                   
-	     -----        /--------------------/                
+	     lat/lon         XY pixels Z zoom      XYZ from TMS
+	    EPSG:4326
+	     .----.                ----
+	    /      \     <->    /--------/    <->      TMS
+	    \      /         /--------------/
+	     -----        /--------------------/
 	   WMS, KML    Web Clients, Google Earth  TileMapService
 	"""
 
@@ -374,19 +374,19 @@ class GlobalGeodetic(object):
 		tx = int( math.ceil( px / float(self.tileSize) ) - 1 )
 		ty = int( math.ceil( py / float(self.tileSize) ) - 1 )
 		return tx, ty
-	
+
 	def LatLonToTile(self, lat, lon, zoom):
 		"Returns the tile for zoom which covers given lat/lon coordinates"
-		
+
 		px, py = self.LatLonToPixels( lat, lon, zoom)
 		return self.PixelsToTile(px,py)
 
 	def Resolution(self, zoom ):
 		"Resolution (arc/pixel) for given zoom level (measured at Equator)"
-		
+
 		return 180.0 / self.tileSize / 2**zoom
 		#return 180 / float( 1 << (8+zoom) )
-		
+
 	def ZoomForPixelSize(self, pixelSize ):
 		"Maximal scaledown zoom of the pyramid closest to the pixelSize."
 
@@ -406,7 +406,7 @@ class GlobalGeodetic(object):
 			(tx+1)*self.tileSize*res - 180,
 			(ty+1)*self.tileSize*res - 90
 		)
-		
+
 	def TileLatLonBounds(self, tx, ty, zoom):
 		"Returns bounds of the given tile in the SWNE form"
 		b = self.TileBounds(tx, ty, zoom)
@@ -422,7 +422,7 @@ class Zoomify(object):
 
 	def __init__(self, width, height, tilesize = 256, tileformat='jpg'):
 		"""Initialization of the Zoomify tile tree"""
-		
+
 		self.tilesize = tilesize
 		self.tileformat = tileformat
 		imagesize = (width, height)
@@ -444,21 +444,21 @@ class Zoomify(object):
 
 		self.tierSizeInTiles.reverse()
 		self.tierImageSize.reverse()
-	
+
 		# Depth of the Zoomify pyramid, number of tiers (zoom levels)
 		self.numberOfTiers = len(self.tierSizeInTiles)
-											
+
 		# Number of tiles up to the given tier of pyramid.
 		self.tileCountUpToTier = []
 		self.tileCountUpToTier[0] = 0
 		for i in range(1, self.numberOfTiers+1):
 			self.tileCountUpToTier.append(
 				self.tierSizeInTiles[i-1][0] * self.tierSizeInTiles[i-1][1] + self.tileCountUpToTier[i-1]
-			)		
-	
+			)
+
 	def tilefilename(self, x, y, z):
 		"""Returns filename for tile with given coordinates"""
-		
+
 		tileIndex = x + y * self.tierSizeInTiles[z][0] + self.tileCountUpToTier[z]
 		return os.path.join("TileGroup%.0f" % math.floor( tileIndex / 256 ),
 			"%s-%s-%s.%s" % ( z, x, y, self.tileformat))
@@ -472,32 +472,32 @@ class GDAL2Tiles(object):
 	# -------------------------------------------------------------------------
 	def process(self):
 		"""The main processing function, runs all the main steps of processing"""
-		
+
 		# Opening and preprocessing of the input file
 		self.open_input()
 
 		# Generation of main metadata files and HTML viewers
 		self.generate_metadata()
-		
+
 		# Generation of the lowest tiles
 		self.generate_base_tiles()
-		
+
 		# Generation of the overview tiles (higher in the pyramid)
 		self.generate_overview_tiles()
-		
+
 	# -------------------------------------------------------------------------
 	def error(self, msg, details = "" ):
 		"""Print an error message and stop the processing"""
 
 		if details:
 			self.parser.error(msg + "\n\n" + details)
-		else:	
+		else:
 			self.parser.error(msg)
-		
+
 	# -------------------------------------------------------------------------
 	def progressbar(self, complete = 0.0):
 		"""Print progressbar for float value 0..1"""
-		
+
 		gdal.TermProgress_nocb(complete)
 
 	# -------------------------------------------------------------------------
@@ -508,7 +508,7 @@ class GDAL2Tiles(object):
 	# -------------------------------------------------------------------------
 	def __init__(self, arguments ):
 		"""Constructor function - initialization"""
-		
+
 		self.stopped = False
 		self.input = None
 		self.output = None
@@ -517,7 +517,7 @@ class GDAL2Tiles(object):
 		self.tilesize = 256
 		self.tiledriver = 'PNG'
 		self.tileext = 'png'
-		
+
 		# Should we read bigger window of the input raster and scale it down?
 		# Note: Modified leter by open_input()
 		# Not for 'near' resampling
@@ -532,9 +532,9 @@ class GDAL2Tiles(object):
 		# Note: Modified later by open_input()
 		# Otherwise the overview tiles are generated from existing underlying tiles
 		self.overviewquery = False
-		
+
 		# RUN THE ARGUMENT PARSER:
-		
+
 		self.optparse_init()
 		self.options, self.args = self.parser.parse_args(args=arguments)
 		if not self.args:
@@ -549,7 +549,7 @@ class GDAL2Tiles(object):
 		except:
 			self.error("This version of GDAL is not supported. Please upgrade to 1.6+.")
 			#,"You can try run crippled version of gdal2tiles with parameters: -v -r 'near'")
-		
+
 		# Is output directory the last argument?
 
 		# Test output directory, if it doesn't exist
@@ -558,21 +558,21 @@ class GDAL2Tiles(object):
 			self.args = self.args[:-1]
 
 		# More files on the input not directly supported yet
-		
+
 		if (len(self.args) > 1):
 			self.error("Processing of several input files is not supported.",
 			"""Please first use a tool like gdal_vrtmerge.py or gdal_merge.py on the files:
 gdal_vrtmerge.py -o merged.vrt %s""" % " ".join(self.args))
 			# TODO: Call functions from gdal_vrtmerge.py directly
-			
+
 		self.input = self.args[0]
-		
+
 		# Default values for not given options
-		
+
 		if not self.output:
 			# Directory with input filename without extension in actual directory
 			self.output = os.path.splitext(os.path.basename( self.input ))[0]
-				
+
 		if not self.options.title:
 			self.options.title = os.path.basename( self.input )
 
@@ -584,25 +584,25 @@ gdal_vrtmerge.py -o merged.vrt %s""" % " ".join(self.args))
 		# Supported options
 
 		self.resampling = None
-		
+
 		if self.options.resampling == 'average':
 			try:
 				if gdal.RegenerateOverview:
 					pass
 			except:
 				self.error("'average' resampling algorithm is not available.", "Please use -r 'near' argument or upgrade to newer version of GDAL.")
-		
+
 		elif self.options.resampling == 'antialias':
 			try:
 				if numpy:
 					pass
 			except:
 				self.error("'antialias' resampling algorithm is not available.", "Install PIL (Python Imaging Library) and numpy.")
-		
+
 		elif self.options.resampling == 'near':
 			self.resampling = gdal.GRA_NearestNeighbour
 			self.querysize = self.tilesize
-			
+
 		elif self.options.resampling == 'bilinear':
 			self.resampling = gdal.GRA_Bilinear
 			self.querysize = self.tilesize * 2
@@ -615,20 +615,41 @@ gdal_vrtmerge.py -o merged.vrt %s""" % " ".join(self.args))
 
 		elif self.options.resampling == 'lanczos':
 			self.resampling = gdal.GRA_Lanczos
-		
+
 		# User specified zoom levels
 		self.tminz = None
 		self.tmaxz = None
 		if self.options.zoom:
 			minmax = self.options.zoom.split('-',1)
 			minmax.extend([''])
-			min, max = minmax[:2]
-			self.tminz = int(min)
-			if max:
-				self.tmaxz = int(max)
+			_min, _max = minmax[:2]
+			self.tminz = int(_min)
+			if _max:
+				self.tmaxz = int(_max)
 			else:
-				self.tmaxz = int(min) 
-		
+				self.tmaxz = int(_min)
+
+		if self.options.profile == 'raster':
+			if self.input:
+				self.in_ds = gdal.Open(self.input, gdal.GA_ReadOnly)
+			else:
+				raise Exception("No input file was specified")
+
+			log2 = lambda x: math.log10(x) / math.log10(2) # log2 (base 2 logarithm)
+
+			self.nativezoom = int(max(math.ceil(log2(self.in_ds.RasterXSize/float(self.tilesize))),
+								math.ceil(log2(self.in_ds.RasterYSize/float(self.tilesize)))))
+
+			if self.tmaxz < self.nativezoom:
+				self.tmaxz = self.nativezoom
+
+			if self.options.verbose:
+				print("Native zoom of the raster:", self.nativezoom)
+
+			# Get the minimal zoom level (whole raster in one tile)
+			if self.tminz == None:
+				self.tminz = 0
+
 		# KML generation
 		self.kml = self.options.kml
 
@@ -644,7 +665,7 @@ gdal_vrtmerge.py -o merged.vrt %s""" % " ".join(self.args))
 	# -------------------------------------------------------------------------
 	def optparse_init(self):
 		"""Prepare the option parser for input (argv)"""
-		
+
 		usage = "Usage: %prog [options] input_file(s) [output]"
 		p = OptionParser(usage, version="%prog "+ __version__)
 		p.add_option("-p", "--profile", dest='profile', type='choice', choices=profile_list,
@@ -667,7 +688,7 @@ gdal_vrtmerge.py -o merged.vrt %s""" % " ".join(self.args))
 		p.add_option("-v", "--verbose",
 						  action="store_true", dest="verbose",
 						  help="Print status messages to stdout")
-		# KML options 
+		# KML options
 		g = OptionGroup(p, "KML (Google Earth) options", "Options for generated Google Earth SuperOverlay metadata")
 		g.add_option("-d", "--drawOrder", dest='draworder',type="float", action="store", help="draworder base level")
 
@@ -694,7 +715,7 @@ gdal_vrtmerge.py -o merged.vrt %s""" % " ".join(self.args))
 		g.add_option("-y", "--yahookey", dest='yahookey',
 						  help="Yahoo Application ID from http://developer.yahoo.com/wsregapp/")
 		p.add_option_group(g)
-		
+
 		# TODO: MapFile + TileIndexes per zoom level for efficient MapServer WMS
 		#g = OptionGroup(p, "WMS MapServer metadata", "Options for generated mapfile and tileindexes for MapServer")
 		#g.add_option("-i", "--tileindex", dest='wms', action="store_true"
@@ -706,28 +727,28 @@ gdal_vrtmerge.py -o merged.vrt %s""" % " ".join(self.args))
 		googlekey='INSERT_YOUR_KEY_HERE', yahookey='INSERT_YOUR_YAHOO_APP_ID_HERE')
 
 		self.parser = p
-		
+
 	# -------------------------------------------------------------------------
 	def open_input(self):
 		"""Initialization of the input raster, reprojection if necessary"""
-		
+
 		gdal.UseExceptions()
 		gdal.AllRegister()
 		if not self.options.verbose:
 			gdal.PushErrorHandler('CPLQuietErrorHandler')
 
 		# Initialize necessary GDAL drivers
-		
+
 		self.out_drv = gdal.GetDriverByName( self.tiledriver )
 		self.mem_drv = gdal.GetDriverByName( 'MEM' )
-		
+
 		if not self.out_drv:
 			raise Exception("The '%s' driver was not found, is it available in this GDAL build?", self.tiledriver)
 		if not self.mem_drv:
 			raise Exception("The 'MEM' driver was not found, is it available in this GDAL build?")
-		
+
 		# Open the input file
-		
+
 		if self.input:
 			self.in_ds = gdal.Open(self.input, gdal.GA_ReadOnly)
 		else:
@@ -739,11 +760,11 @@ gdal_vrtmerge.py -o merged.vrt %s""" % " ".join(self.args))
 		if not self.in_ds:
 			# Note: GDAL prints the ERROR message too
 			self.error("It is not possible to open the input file '%s'." % self.input )
-			
+
 		# Read metadata from the input file
 		if self.in_ds.RasterCount == 0:
 			self.error( "Input file '%s' has no raster band" % self.input )
-			
+
 		if self.in_ds.GetRasterBand(1).GetRasterColorTable():
 			# TODO: Process directly paletted dataset by generating VRT in memory
 			self.error( "Please convert this file to RGB/RGBA and run gdal2tiles on the result.",
@@ -778,7 +799,7 @@ gdal2tiles temp.vrt""" % self.input )
 
 
 		self.in_srs = None
-		
+
 		if self.options.s_srs:
 			self.in_srs = osr.SpatialReference()
 			self.in_srs.SetFromUserInput(self.options.s_srs)
@@ -794,7 +815,7 @@ gdal2tiles temp.vrt""" % self.input )
 			#	self.error("There is no spatial reference system info included in the input file.","You should run gdal2tiles with --s_srs EPSG:XXXX or similar.")
 
 		# Spatial Reference System of tiles
-		
+
 		self.out_srs = osr.SpatialReference()
 
 		if self.options.profile == 'mercator':
@@ -803,30 +824,30 @@ gdal2tiles temp.vrt""" % self.input )
 			self.out_srs.ImportFromEPSG(4326)
 		else:
 			self.out_srs = self.in_srs
-		
+
 		# Are the reference systems the same? Reproject if necessary.
 
 		self.out_ds = None
-		
+
 		if self.options.profile in ('mercator', 'geodetic'):
-						
+
 			if (self.in_ds.GetGeoTransform() == (0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) and (self.in_ds.GetGCPCount() == 0):
 				self.error("There is no georeference - neither affine transformation (worldfile) nor GCPs. You can generate only 'raster' profile tiles.",
 				"Either gdal2tiles with parameter -p 'raster' or use another GIS software for georeference e.g. gdal_transform -gcp / -a_ullr / -a_srs")
-				
+
 			if self.in_srs:
-				
+
 				if (self.in_srs.ExportToProj4() != self.out_srs.ExportToProj4()) or (self.in_ds.GetGCPCount() != 0):
-					
+
 					# Generation of VRT dataset in tile projection, default 'nearest neighbour' warping
 					self.out_ds = gdal.AutoCreateWarpedVRT( self.in_ds, self.in_srs_wkt, self.out_srs.ExportToWkt() )
-					
+
 					# TODO: HIGH PRIORITY: Correction of AutoCreateWarpedVRT according the max zoomlevel for correct direct warping!!!
-					
+
 					if self.options.verbose:
 						print("Warping of the raster by AutoCreateWarpedVRT (result saved into 'tiles.vrt')")
 						self.out_ds.GetDriver().CreateCopy("tiles.vrt", self.out_ds)
-						
+
 					# Note: self.in_srs and self.in_srs_wkt contain still the non-warped reference system!!!
 
 					# Correction of AutoCreateWarpedVRT for NODATA values
@@ -890,13 +911,13 @@ gdal2tiles temp.vrt""" % self.input )
 							open("tiles1.vrt","w").write(s)
 					s = '''
 					'''
-						
+
 			else:
 				self.error("Input file has unknown SRS.", "Use --s_srs ESPG:xyz (or similar) to provide source reference system." )
 
 			if self.out_ds and self.options.verbose:
 				print("Projected file:", "tiles.vrt", "( %sP x %sL - %s bands)" % (self.out_ds.RasterXSize, self.out_ds.RasterYSize, self.out_ds.RasterCount))
-		
+
 		if not self.out_ds:
 			self.out_ds = self.in_ds
 
@@ -922,20 +943,20 @@ gdal2tiles temp.vrt""" % self.input )
 			if self.options.verbose:
 				print("KML autotest OK!")
 
-		# Read the georeference 
+		# Read the georeference
 
 		self.out_gt = self.out_ds.GetGeoTransform()
-			
+
 		#originX, originY = self.out_gt[0], self.out_gt[3]
 		#pixelSize = self.out_gt[1] # = self.out_gt[5]
-		
+
 		# Test the size of the pixel
-		
+
 		# MAPTILER - COMMENTED
 		#if self.out_gt[1] != (-1 * self.out_gt[5]) and self.options.profile != 'raster':
 			# TODO: Process corectly coordinates with are have swichted Y axis (display in OpenLayers too)
 			#self.error("Size of the pixel in the output differ for X and Y axes.")
-			
+
 		# Report error in case rotation/skew is in geotransform (possible only in 'raster' profile)
 		if (self.out_gt[2], self.out_gt[4]) != (0,0):
 			self.error("Georeference of the raster contains rotation or skew. Such raster is not supported. Please use gdalwarp first.")
@@ -962,7 +983,7 @@ gdal2tiles temp.vrt""" % self.input )
 		if self.options.profile == 'mercator':
 
 			self.mercator = GlobalMercator() # from globalmaptiles.py
-			
+
 			# Function which generates SWNE in LatLong for given tile
 			self.tileswne = self.mercator.TileLatLonBounds
 
@@ -978,14 +999,14 @@ gdal2tiles temp.vrt""" % self.input )
 
 			# TODO: Maps crossing 180E (Alaska?)
 
-			# Get the minimal zoom level (map covers area equivalent to one tile) 
+			# Get the minimal zoom level (map covers area equivalent to one tile)
 			if self.tminz == None:
 				self.tminz = self.mercator.ZoomForPixelSize( self.out_gt[1] * max( self.out_ds.RasterXSize, self.out_ds.RasterYSize) / float(self.tilesize) )
 
 			# Get the maximal zoom level (closest possible zoom level up on the resolution of raster)
 			if self.tmaxz == None:
 				self.tmaxz = self.mercator.ZoomForPixelSize( self.out_gt[1] )
-			
+
 			if self.options.verbose:
 				print("Bounds (latlong):", self.mercator.MetersToLatLon( self.ominx, self.ominy), self.mercator.MetersToLatLon( self.omaxx, self.omaxy))
 				print('MinZoomLevel:', self.tminz)
@@ -997,7 +1018,7 @@ gdal2tiles temp.vrt""" % self.input )
 
 			# Function which generates SWNE in LatLong for given tile
 			self.tileswne = self.geodetic.TileLatLonBounds
-			
+
 			# Generate table with min max tile coordinates for all zoomlevels
 			self.tminmax = list(range(0,32))
 			for tz in range(0, 32):
@@ -1007,7 +1028,7 @@ gdal2tiles temp.vrt""" % self.input )
 				tminx, tminy = max(0, tminx), max(0, tminy)
 				tmaxx, tmaxy = min(2**(tz+1)-1, tmaxx), min(2**tz-1, tmaxy)
 				self.tminmax[tz] = (tminx, tminy, tmaxx, tmaxy)
-				
+
 			# TODO: Maps crossing 180E (Alaska?)
 
 			# Get the maximal zoom level (closest possible zoom level up on the resolution of raster)
@@ -1017,17 +1038,20 @@ gdal2tiles temp.vrt""" % self.input )
 			# Get the maximal zoom level (closest possible zoom level up on the resolution of raster)
 			if self.tmaxz == None:
 				self.tmaxz = self.geodetic.ZoomForPixelSize( self.out_gt[1] )
-			
+
 			if self.options.verbose:
 				print("Bounds (latlong):", self.ominx, self.ominy, self.omaxx, self.omaxy)
-					
+
 		if self.options.profile == 'raster':
-			
+
 			log2 = lambda x: math.log10(x) / math.log10(2) # log2 (base 2 logarithm)
-			
+
 			self.nativezoom = int(max( math.ceil(log2(self.out_ds.RasterXSize/float(self.tilesize))),
-			                           math.ceil(log2(self.out_ds.RasterYSize/float(self.tilesize)))))
-			
+								math.ceil(log2(self.out_ds.RasterYSize/float(self.tilesize)))))
+
+			if self.tmaxz < self.nativezoom:
+				self.tmaxz = self.nativezoom
+
 			if self.options.verbose:
 				print("Native zoom of the raster:", self.nativezoom)
 
@@ -1070,16 +1094,16 @@ gdal2tiles temp.vrt""" % self.input )
 				self.tileswne = rastertileswne
 			else:
 				self.tileswne = lambda x, y, z: (0,0,0,0)
-					
+
 	# -------------------------------------------------------------------------
 	def generate_metadata(self):
 		"""Generation of main metadata files and HTML viewers (metadata related to particular tiles are generated during the tile processing)."""
-		
+
 		if not os.path.exists(self.output):
 			os.makedirs(self.output)
 
 		if self.options.profile == 'mercator':
-			
+
 			south, west = self.mercator.MetersToLatLon( self.ominx, self.ominy)
 			north, east = self.mercator.MetersToLatLon( self.omaxx, self.omaxy)
 			south, west = max(-85.05112878, south), max(-180.0, west)
@@ -1101,33 +1125,33 @@ gdal2tiles temp.vrt""" % self.input )
 					f.close()
 
 		elif self.options.profile == 'geodetic':
-			
+
 			west, south = self.ominx, self.ominy
 			east, north = self.omaxx, self.omaxy
 			south, west = max(-90.0, south), max(-180.0, west)
 			north, east = min(90.0, north), min(180.0, east)
 			self.swne = (south, west, north, east)
-			
+
 			# Generate openlayers.html
 			if self.options.webviewer in ('all','openlayers'):
 				if not self.options.resume or not os.path.exists(os.path.join(self.output, 'openlayers.html')):
 					f = open(os.path.join(self.output, 'openlayers.html'), 'w')
 					f.write( self.generate_openlayers() )
-					f.close()			
+					f.close()
 
 		elif self.options.profile == 'raster':
-			
+
 			west, south = self.ominx, self.ominy
 			east, north = self.omaxx, self.omaxy
 
 			self.swne = (south, west, north, east)
-			
+
 			# Generate openlayers.html
 			if self.options.webviewer in ('all','openlayers'):
 				if not self.options.resume or not os.path.exists(os.path.join(self.output, 'openlayers.html')):
 					f = open(os.path.join(self.output, 'openlayers.html'), 'w')
 					f.write( self.generate_openlayers() )
-					f.close()			
+					f.close()
 
 
 		# Generate tilemapresource.xml.
@@ -1143,18 +1167,18 @@ gdal2tiles temp.vrt""" % self.input )
 			xmin, ymin, xmax, ymax = self.tminmax[self.tminz]
 			for x in range(xmin, xmax+1):
 				for y in range(ymin, ymax+1):
-					children.append( [ x, y, self.tminz ] ) 
+					children.append( [ x, y, self.tminz ] )
 			# Generate Root KML
 			if self.kml:
 				if not self.options.resume or not os.path.exists(os.path.join(self.output, 'doc.kml')):
 					f = open(os.path.join(self.output, 'doc.kml'), 'w')
 					f.write( self.generate_kml( None, None, None, children) )
 					f.close()
-		
+
 	# -------------------------------------------------------------------------
 	def generate_base_tiles(self, cpu):
 		"""Generation of the base tiles (the lowest in the pyramid) directly from the input raster"""
-		
+
 		if self.options.verbose:
 			#mx, my = self.out_gt[0], self.out_gt[3] # OriginX, OriginY
 			#px, py = self.mercator.MetersToPixels( mx, my, self.tmaxz)
@@ -1173,21 +1197,21 @@ gdal2tiles temp.vrt""" % self.input )
 		#tminy = tminy+ (tmaxy - tminy)/2
 		#tmaxx = tminx
 		#tmaxy = tminy
-		
+
 		ds = self.out_ds
 		tilebands = self.dataBandsCount + 1
 		querysize = self.querysize
-		
+
 		if self.options.verbose:
 			print("dataBandsCount: ", self.dataBandsCount)
 			print("tilebands: ", tilebands)
-		
+
 		#print tminx, tminy, tmaxx, tmaxy
 		tcount = (1+abs(tmaxx-tminx)) * (1+abs(tmaxy-tminy))
 		#print tcount
 		ti = 0
-		
-		
+
+
 		yrange = range(tmaxy, tminy-1, -1)
 		if self.options.leaflet:
 			yrange = range(tminy, tmaxy+1)
@@ -1238,15 +1262,15 @@ gdal2tiles temp.vrt""" % self.input )
 
 					rx, ry, rxsize, rysize = rb
 					wx, wy, wxsize, wysize = wb
-											
+
 				else: # 'raster' profile:
-					
+
 					tsize = int(self.tsize[tz]) # tilesize in raster coordinates for actual zoom
 					xsize = self.out_ds.RasterXSize # size of the raster in pixels
 					ysize = self.out_ds.RasterYSize
 					if tz >= self.nativezoom:
 						querysize = self.tilesize # int(2**(self.nativezoom-tz) * self.tilesize)
-					
+
 					rx = (tx) * tsize
 					rxsize = 0
 					if tx == tmaxx:
@@ -1270,10 +1294,10 @@ gdal2tiles temp.vrt""" % self.input )
 					if not self.options.leaflet:
 						if wysize != self.tilesize:
 							wy = self.tilesize - wysize
-					
+
 				if self.options.verbose:
 					print("\tReadRaster Extent: ", (rx, ry, rxsize, rysize), (wx, wy, wxsize, wysize))
-					
+
 				# Query is in 'nearest neighbour' but can be bigger in then the tilesize
 				# We scale down the query to the tilesize by supplied algorithm.
 
@@ -1317,39 +1341,39 @@ gdal2tiles temp.vrt""" % self.input )
 						f = open( kmlfilename, 'w')
 						f.write( self.generate_kml( tx, ty, tz ))
 						f.close()
-					
+
 				if not self.options.verbose:
 					queue.put(tcount)
-		
+
 	# -------------------------------------------------------------------------
 	def generate_overview_tiles(self, cpu, tz):
 		"""Generation of the overview tiles (higher in the pyramid) based on existing tiles"""
-		
+
 		tilebands = self.dataBandsCount + 1
-		
+
 		# Usage of existing tiles: from 4 underlying tiles generate one as overview.
-		
+
 		tcount = 0
 		for z in range(self.tmaxz-1, self.tminz-1, -1):
 			tminx, tminy, tmaxx, tmaxy = self.tminmax[z]
 			tcount += (1+abs(tmaxx-tminx)) * (1+abs(tmaxy-tminy))
 
 		ti = 0
-		
+
 		# querysize = tilesize * 2
-		
+
 		tminx, tminy, tmaxx, tmaxy = self.tminmax[tz]
 
 		yrange = range(tmaxy, tminy-1, -1)
 		if self.options.leaflet:
 			yrange = range(tminy, tmaxy+1)
-		
+
 		for ty in yrange:
 			for tx in range(tminx, tmaxx+1):
 
 				if self.stopped:
 					break
-					
+
 				ti += 1
 				if (ti - 1) % self.options.processes != cpu:
 					continue
@@ -1357,7 +1381,7 @@ gdal2tiles temp.vrt""" % self.input )
 
 				if self.options.verbose:
 					print(ti,'/',tcount, tilefilename) #, "( TileMapService: z / x / y )"
-				
+
 				if self.options.resume and os.path.exists(tilefilename):
 					if self.options.verbose:
 						print("Tile generation skiped because of --resume")
@@ -1412,7 +1436,7 @@ gdal2tiles temp.vrt""" % self.input )
 								dsquerytile.ReadRaster(0,0,self.tilesize,self.tilesize),
 								band_list=list(range(1,tilebands+1)))
 							children.append( [x, y, tz+1] )
-				
+
 				self.scale_query_to_tile(dsquery, dstile, tilefilename)
 
 				# Write a copy of tile to png/jpg
@@ -1432,7 +1456,6 @@ gdal2tiles temp.vrt""" % self.input )
 				if not self.options.verbose:
 					queue.put(tcount)
 
-		
 	# -------------------------------------------------------------------------
 	def geo_query(self, ds, ulx, uly, lrx, lry, querysize = 0):
 		"""For given dataset and query in cartographic coordinates
@@ -1506,9 +1529,9 @@ gdal2tiles temp.vrt""" % self.input )
 			im1 = im.resize((tilesize,tilesize), Image.ANTIALIAS)
 			if os.path.exists(tilefilename):
 				im0 = Image.open(tilefilename)
-				im1 = Image.composite(im1, im0, im1) 
+				im1 = Image.composite(im1, im0, im1)
 			im1.save(tilefilename,self.tiledriver)
-			
+
 		else:
 
 			# Other algorithms are implemented by gdal.ReprojectImage().
@@ -1534,7 +1557,7 @@ gdal2tiles temp.vrt""" % self.input )
 		args['tileformat'] = self.tileext
 		args['publishurl'] = self.options.url
 		args['profile'] = self.options.profile
-		
+
 		if self.options.profile == 'mercator':
 			args['srs'] = "EPSG:900913"
 		elif self.options.profile == 'geodetic':
@@ -1567,7 +1590,7 @@ gdal2tiles temp.vrt""" % self.input )
 	</TileMap>
 	"""
 		return s
-			
+
 	# -------------------------------------------------------------------------
 	def generate_kml(self, tx, ty, tz, children = [], **args ):
 		"""
@@ -1586,7 +1609,7 @@ gdal2tiles temp.vrt""" % self.input )
 			args['maxlodpixels'] = -1
 
 		args['description'] = self.options.description
-	
+
 		if tx==None:
 			tilekml = False
 			args['title'] = self.options.title
@@ -1596,26 +1619,26 @@ gdal2tiles temp.vrt""" % self.input )
 			args['south'], args['west'], args['north'], args['east'] = self.tileswne(tx, ty, tz)
 
 
-		
-		#if tx == 0: 
-	 	#		args['drawOrder'] = 2 * tz + 1 
-		#elif tx 	 != None: 
+
+		#if tx == 0:
+	 	#		args['drawOrder'] = 2 * tz + 1
+		#elif tx 	 != None:
 			#args['drawOrder'] = 2 * tz
 		#else:
 			#args['drawOrder'] = 0
-		
+
 		if tx != None:
 			args['drawOrder'] =  self.options.draworder + (1-1.0/(tz+1))
 		else:
 			args['drawOrder'] =  self.options.draworder
-			
+
 		url = self.options.url
 		if not url:
 			if tilekml:
 				url = "../../"
 			else:
 				url = ""
-				
+
 		s = """<?xml version="1.0" encoding="utf-8"?>
 	<kml xmlns="http://earth.google.com/kml/2.1">
 	  <Document>
@@ -1652,7 +1675,7 @@ gdal2tiles temp.vrt""" % self.input )
 	        <west>%(west).14f</west>
 	      </LatLonBox>
 	    </GroundOverlay>
-	""" % args	
+	""" % args
 
 		for cx, cy, cz in children:
 			csouth, cwest, cnorth, ceast = self.tileswne(cx, cy, cz)
@@ -1683,7 +1706,7 @@ gdal2tiles temp.vrt""" % self.input )
 	</kml>
 	"""
 		return s
-	
+
 	# -------------------------------------------------------------------------
 	def generate_googlemaps(self):
 		"""
@@ -1703,7 +1726,7 @@ gdal2tiles temp.vrt""" % self.input )
 		args['copyright'] = self.options.copyright
 
 		s = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-			<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml"> 
+			<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
 			  <head>
 			    <title>%(title)s</title>
 			    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
@@ -1738,7 +1761,7 @@ gdal2tiles temp.vrt""" % self.input )
 			     * http://www.maptiler.org/google-maps-overlay-opacity-control/
 			     */
 
-			    var CTransparencyLENGTH = 58; 
+			    var CTransparencyLENGTH = 58;
 			    // maximum width that the knob can move (slide width minus knob width)
 
 			    function CTransparencyControl( overlay ) {
@@ -1792,11 +1815,11 @@ gdal2tiles temp.vrt""" % self.input )
 			        // Handle transparent PNG files in MSIE
 			        if (this.ie) {
 			          var loader = "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='http://www.maptiler.org/img/opacity-slider.png', sizingMethod='crop');";
-			          this.knob = document.createElement("div"); 
+			          this.knob = document.createElement("div");
 			          this.knob.style.height="21px";
 			          this.knob.style.width="13px";
 				  this.knob.style.overflow="hidden";
-			          this.knob_img = document.createElement("div"); 
+			          this.knob_img = document.createElement("div");
 			          this.knob_img.style.height="21px";
 			          this.knob_img.style.width="83px";
 			          this.knob_img.style.filter=loader;
@@ -1804,7 +1827,7 @@ gdal2tiles temp.vrt""" % self.input )
 				  this.knob_img.style.left="-70px";
 			          this.knob.appendChild(this.knob_img);
 			        } else {
-			          this.knob = document.createElement("div"); 
+			          this.knob = document.createElement("div");
 			          this.knob.style.height="21px";
 			          this.knob.style.width="13px";
 			          this.knob.style.backgroundImage="url(http://www.maptiler.org/img/opacity-slider.png)";
@@ -1854,16 +1877,16 @@ gdal2tiles temp.vrt""" % self.input )
 			        return 0;
 			    }
 
-			    function resize() {  
-			        var map = document.getElementById("map");  
-			        var header = document.getElementById("header");  
-			        var subheader = document.getElementById("subheader");  
+			    function resize() {
+			        var map = document.getElementById("map");
+			        var header = document.getElementById("header");
+			        var subheader = document.getElementById("subheader");
 			        map.style.height = (getWindowHeight()-80) + "px";
 			        map.style.width = (getWindowWidth()-20) + "px";
 			        header.style.width = (getWindowWidth()-20) + "px";
 			        subheader.style.width = (getWindowWidth()-20) + "px";
 			        // map.checkResize();
-			    } 
+			    }
 
 
 			    /*
@@ -1901,7 +1924,7 @@ gdal2tiles temp.vrt""" % self.input )
 			          tilelayer.getTileUrl = function(tile,zoom) {
 			              if ((zoom < mapMinZoom) || (zoom > mapMaxZoom)) {
 			                  return "http://www.maptiler.org/img/none.png";
-			              } 
+			              }
 			              var ymax = 1 << zoom;
 			              var y = ymax - tile.y -1;
 			              var tileBounds = new GLatLngBounds(
@@ -1954,7 +1977,7 @@ gdal2tiles temp.vrt""" % self.input )
 			           else { link.setHref(url) };
 			           var networkLink = ge.createNetworkLink("");
 			           networkLink.setName("TMS Map Overlay");
-			           networkLink.setFlyToView(true);  
+			           networkLink.setFlyToView(true);
 			           networkLink.setLink(link);
 			           ge.getFeatures().appendChild(networkLink);
 			       } else {
@@ -2019,7 +2042,7 @@ gdal2tiles temp.vrt""" % self.input )
 		        #subheader { height: 12px; text-align: right; font-size: 10px; color: #555;}
 		        #map { height: 95%%; border: 1px solid #888; }
 		    </style>""" % args
-		
+
 		if self.options.profile == 'mercator':
 			s += """
 		    <script src='http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.1'></script>
@@ -2091,7 +2114,7 @@ gdal2tiles temp.vrt""" % self.input )
 	            // create TMS Overlay layer
 	            var tmsoverlay = new OpenLayers.Layer.TMS( "TMS Overlay", "",
 	                {   // url: '', serviceVersion: '.', layername: '.',
-						type: 'png', getURL: overlay_getTileURL, alpha: true, 
+						type: 'png', getURL: overlay_getTileURL, alpha: true,
 						isBaseLayer: false
 	                });
 				if (OpenLayers.Util.alphaHack() == false) { tmsoverlay.setOpacity(0.7); }
@@ -2103,10 +2126,10 @@ gdal2tiles temp.vrt""" % self.input )
 	            var switcherControl = new OpenLayers.Control.LayerSwitcher();
 	            map.addControl(switcherControl);
 	            switcherControl.maximizeControl();
-	
+
 	            map.zoomToExtent( mapBounds.transform(map.displayProjection, map.projection ) );
 			""" % args
-	
+
 		elif self.options.profile == 'geodetic':
 			s += """
 	            var options = {
@@ -2123,7 +2146,7 @@ gdal2tiles temp.vrt""" % self.input )
 	            wms = new OpenLayers.Layer.WMS( "VMap0",
 	                    "http://labs.metacarta.com/wms-c/Basic.py?", {layers: 'basic', format: 'image/png' } );
 	            map.addLayer(wms);
-				
+
 	            var tmsoverlay = new OpenLayers.Layer.TMS( "TMS Overlay", "",
 	                {
 	                    serviceVersion: '.', layername: '.', alpha: true,
@@ -2139,7 +2162,7 @@ gdal2tiles temp.vrt""" % self.input )
 
 	            map.zoomToExtent( mapBounds );
 			"""
-			
+
 		elif self.options.profile == 'raster':
 			s += """
 	            var options = {
@@ -2149,13 +2172,13 @@ gdal2tiles temp.vrt""" % self.input )
 		            numZoomLevels: %(rasterzoomlevels)d
 		            };
 	            map = new OpenLayers.Map('map', options);
-	
+
 		        var layer = new OpenLayers.Layer.TMS( "TMS Layer","",
 		            {  url: '', serviceVersion: '.', layername: '.', alpha: true,
-						type: 'png', getURL: overlay_getTileURL 
+						type: 'png', getURL: overlay_getTileURL
 					});
 		        map.addLayer(layer);
-				map.zoomToExtent( mapBounds );	
+				map.zoomToExtent( mapBounds );
 		""" % args
 
 
@@ -2166,7 +2189,7 @@ gdal2tiles temp.vrt""" % self.input )
 	            map.addControl(new OpenLayers.Control.KeyboardDefaults());
 	        }
 			""" % args
-		
+
 		if self.options.profile == 'mercator':
 			s += """
 	        function osm_getTileURL(bounds) {
@@ -2183,7 +2206,7 @@ gdal2tiles temp.vrt""" % self.input )
 	                return this.url + z + "/" + x + "/" + y + "." + this.type;
 	            }
 	        }
-	
+
 	        function overlay_getTileURL(bounds) {
 	            var res = this.map.getResolution();
 	            var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
@@ -2198,9 +2221,9 @@ gdal2tiles temp.vrt""" % self.input )
                 } else {
                    return "http://www.maptiler.org/img/none.png";
                 }
-	        }		
+	        }
 			""" % args
-			
+
 		elif self.options.profile == 'geodetic':
 			s += """
 	        function overlay_getTileURL(bounds) {
@@ -2219,7 +2242,7 @@ gdal2tiles temp.vrt""" % self.input )
                 }
 	        }
 			""" % args
-			
+
 		elif self.options.profile == 'raster':
 			s += """
 	        function overlay_getTileURL(bounds) {
@@ -2228,13 +2251,13 @@ gdal2tiles temp.vrt""" % self.input )
 	            var y = Math.round((bounds.bottom - this.maxExtent.bottom) / (res * this.tileSize.h));
 	            var z = this.map.getZoom();
 				if (x >= 0 && y >= 0) {
-		            return this.url + z + "/" + x + "/" + y + "." + this.type;				
+		            return this.url + z + "/" + x + "/" + y + "." + this.type;
 				} else {
 	                return "http://www.maptiler.org/img/none.png";
 				}
 			}
 			""" % args
-		
+
 		s += """
 		   function getWindowHeight() {
 		        if (self.innerHeight) return self.innerHeight;
@@ -2252,16 +2275,16 @@ gdal2tiles temp.vrt""" % self.input )
 			        return 0;
 		    }
 
-		    function resize() {  
-			    var map = document.getElementById("map");  
-			    var header = document.getElementById("header");  
-			    var subheader = document.getElementById("subheader");  
+		    function resize() {
+			    var map = document.getElementById("map");
+			    var header = document.getElementById("header");
+			    var subheader = document.getElementById("subheader");
 			    map.style.height = (getWindowHeight()-80) + "px";
 			    map.style.width = (getWindowWidth()-20) + "px";
 			    header.style.width = (getWindowWidth()-20) + "px";
 			    subheader.style.width = (getWindowWidth()-20) + "px";
 				if (map.updateSize) { map.updateSize(); };
-		    } 
+		    }
 
 		    onresize=function(){ resize(); };
 
