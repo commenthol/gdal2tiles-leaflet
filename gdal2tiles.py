@@ -1585,7 +1585,7 @@ gdal2tiles temp.vrt""" % self.input )
         if children == []:
             args['maxlodpixels'] = -1
 
-        if tx==None:
+        if tx == None:
             tilekml = False
             args['title'] = self.options.title
         else:
