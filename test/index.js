@@ -25,7 +25,7 @@ function init() {
 	rc.setMaxBounds();
 
 	// set the view on a marker ...
-	map.setView(rc.unproject([1589, 1447]), 5);
+	map.setView(rc.unproject([1589, 1447]), 4);
 
 	// set marker at the image bound edges
 	var layerBounds = L.layerGroup([
