@@ -10,6 +10,14 @@ It adds the option `-l` or `--leaflet` to generate the resulting images with the
 
 Together with the small [leafletjs][] plugin [leaflet-rastercoords][] you'll be able to add markers at the correct position using the (x, y) coordinates of the full-size image.
 
+## Prerequisites
+
+On Debian style OS:
+
+    sudo apt install python-gdal
+
+for others give your search-engine a try...
+
 ## Basic usage
 
 ````
@@ -101,4 +109,4 @@ leaflet for sample: [(License)](https://github.com/Leaflet/Leaflet/blob/master/L
 [leaflet-rastercoords]: https://github.com/commenthol/leaflet-rastercoords
 [gdal2tiles.py]: http://download.osgeo.org/gdal/1.11.1/gdal-1.11.1.tar.gz "/gdal-1.11.1/swig/python/scripts/gdal2tiles.py"
 [gdal2tiles-Ticket-4379]: http://trac.osgeo.org/gdal/ticket/4379
-[example]: https://commenthol.github.io/gdal2tiles-leaflet/test/index.html
+[example]: https://commenthol.github.io/leaflet-rastercoords/
