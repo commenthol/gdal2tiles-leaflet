@@ -5,7 +5,7 @@
  */
 /* globals define */
 
-(function (factory) {
+;(function (factory) {
   var L
   if (typeof define === 'function' && define.amd) {
     // AMD

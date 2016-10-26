@@ -87,10 +87,6 @@ Modifications and samples are [MIT licensed][LICENSE].
 * Copyright (c) 2008, Klokan Petr Pridal
 * Copyright (c) 2010-2013, Even Rouault
 
-leaflet for sample: [(License)](https://github.com/Leaflet/Leaflet/blob/master/LICENSE)
-* Copyright (c) 2010-2015, Vladimir Agafonkin
-* Copyright (c) 2010-2011, CloudMade
-
 ## References
 
 <!-- !ref -->
