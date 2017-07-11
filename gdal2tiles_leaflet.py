@@ -47,7 +47,7 @@ try:
     from osgeo import osr
 except:
     import gdal
-    print 'You are using "old gen" bindings. gdal2tiles needs "new gen" bindings.'
+    print('You are using "old gen" bindings. gdal2tiles needs "new gen" bindings.')
     sys.exit(1)
 
 import os
@@ -827,8 +827,7 @@ gdal_vrtmerge.py -o merged.vrt %s"""
             print ('Options:', self.options)
             print ('Input:', self.input)
             print ('Output:', self.output)
-            print 'Cache: %s MB' % (gdal.GetCacheMax() / 1024 / 1024)
-            print ''
+            print ('Cache: {} MB'.format(gdal.GetCacheMax() / 1024 / 1024))
 
     # -------------------------------------------------------------------------
 
@@ -1025,7 +1024,7 @@ gdal2tiles temp.vrt"""
                 self.in_nodata = nds
 
         if self.options.verbose:
-            print 'NODATA: %s' % self.in_nodata
+            print('NODATA: {}'.format(self.in_nodata))
 
         #
         # Here we should have RGBA input dataset opened in self.in_ds
@@ -1099,7 +1098,7 @@ gdal2tiles temp.vrt"""
                     # TODO: HIGH PRIORITY: Correction of AutoCreateWarpedVRT according the max zoomlevel for correct direct warping!!!
 
                     if self.options.verbose:
-                        print "Warping of the raster by AutoCreateWarpedVRT (result saved into 'tiles.vrt')"
+                        print("Warping of the raster by AutoCreateWarpedVRT (result saved into 'tiles.vrt')")
                         self.out_ds.GetDriver().CreateCopy('tiles.vrt',
                                 self.out_ds)
 
@@ -1158,7 +1157,7 @@ gdal2tiles temp.vrt"""
                                 self.in_nodata[1], self.in_nodata[2]))
 
                         if self.options.verbose:
-                            print "Modified warping result saved into 'tiles1.vrt'"
+                            print("Modified warping result saved into 'tiles1.vrt'")
                             open('tiles1.vrt', 'w').write(s)
 
                     # -----------------------------------
@@ -1206,7 +1205,7 @@ gdal2tiles temp.vrt"""
                         os.unlink(tempfilename)
 
                         if self.options.verbose:
-                            print "Modified -dstalpha warping result saved into 'tiles1.vrt'"
+                            print("Modified -dstalpha warping result saved into 'tiles1.vrt'")
                             open('tiles1.vrt', 'w').write(s)
                     s = '''
                     '''
@@ -1253,7 +1252,7 @@ gdal2tiles temp.vrt"""
             self.kml = True
             self.isepsg4326 = True
             if self.options.verbose:
-                print 'KML autotest OK!'
+                print('KML autotest OK!')
 
         # Read the georeference
 
@@ -1582,10 +1581,7 @@ gdal2tiles temp.vrt"""
             # px, py = self.mercator.MetersToPixels( mx, my, self.tmaxz)
             # print "Pixel coordinates:", px, py, (mx, my)
 
-            print ''
-            print 'Tiles generated from the max zoom level:'
-            print '----------------------------------------'
-            print ''
+            print('\nTiles generated from the max zoom level:\n----------------------------------------\n')
 
         # Set the bounds
 
@@ -1633,7 +1629,7 @@ gdal2tiles temp.vrt"""
 
                 if self.options.resume and os.path.exists(tilefilename):
                     if self.options.verbose:
-                        print 'Tile generation skiped because of --resume'
+                        print('Tile generation skiped because of --resume')
                     else:
                         queue.put(tcount)
                     continue
@@ -1865,7 +1861,7 @@ gdal2tiles temp.vrt"""
 
                 if self.options.resume and os.path.exists(tilefilename):
                     if self.options.verbose:
-                        print 'Tile generation skiped because of --resume'
+                        print('Tile generation skiped because of --resume')
                     else:
                         queue.put(tcount)
                     continue
@@ -2968,8 +2964,8 @@ def worker_overview_tiles(argv, cpu, tz):
     gdal2tiles.generate_overview_tiles(cpu, tz)
 
 
-if __name__ == '__main__':
-    argv = gdal.GeneralCmdLineProcessor(sys.argv)
+def main(*args, **kwargs):
+    argv = gdal.GeneralCmdLineProcessor(args)
     if argv:
         gdal2tiles = GDAL2Tiles(argv[1:])  # handle command line options
 
@@ -2979,7 +2975,7 @@ if __name__ == '__main__':
 
         pool = multiprocessing.Pool()
         processed_tiles = 0
-        print 'Generating Base Tiles:'
+        print('Generating Base Tiles:')
         for cpu in range(gdal2tiles.options.processes):
             pool.apply_async(worker_base_tiles, [argv, cpu])
         pool.close()
@@ -2994,7 +2990,7 @@ if __name__ == '__main__':
         pool.join()
 
         processed_tiles = 0
-        print 'Generating Overview Tiles:'
+        print('Generating Overview Tiles:')
         for tz in range(gdal2tiles.tmaxz - 1, gdal2tiles.tminz - 1, -1):
             pool = multiprocessing.Pool()
             for cpu in range(gdal2tiles.options.processes):
@@ -3010,6 +3006,9 @@ if __name__ == '__main__':
                 except:
                     pass
             pool.join()
+
+if __name__ == '__main__':
+    main(*sys.argv)
 
 #############
 # vim:noet
