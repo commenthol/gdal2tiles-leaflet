@@ -16,6 +16,10 @@ On Debian style OS:
 
     sudo apt install python-gdal
 
+for python3
+
+    sudo apt install python3-gdal
+
 for others give your search-engine a try...
 
 ## Basic usage

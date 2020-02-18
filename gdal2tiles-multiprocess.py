@@ -806,7 +806,7 @@ gdal_vrtmerge.py -o merged.vrt %s"""
                     math.ceil(log2(self.in_ds.RasterYSize
                     / float(self.tilesize)))))
 
-            if self.tmaxz < self.nativezoom:
+            if int(self.tmaxz or 0) < self.nativezoom:
                 self.tmaxz = self.nativezoom
 
             if self.options.verbose:
@@ -1580,7 +1580,7 @@ gdal2tiles temp.vrt"""
 
             # mx, my = self.out_gt[0], self.out_gt[3] # OriginX, OriginY
             # px, py = self.mercator.MetersToPixels( mx, my, self.tmaxz)
-            # print "Pixel coordinates:", px, py, (mx, my)
+            # print("Pixel coordinates:", px, py, (mx, my))
 
             print('')
             print('Tiles generated from the max zoom level:')
@@ -1605,11 +1605,11 @@ gdal2tiles temp.vrt"""
             print ('dataBandsCount: ', self.dataBandsCount)
             print ('tilebands: ', tilebands)
 
-        # print tminx, tminy, tmaxx, tmaxy
+        # print(tminx, tminy, tmaxx, tmaxy)
 
         tcount = (1 + abs(tmaxx - tminx)) * (1 + abs(tmaxy - tminy))
 
-        # print tcount
+        # print(tcount)
 
         ti = 0
 
