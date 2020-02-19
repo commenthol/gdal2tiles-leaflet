@@ -612,7 +612,7 @@ class GDAL2Tiles(object):
     # -------------------------------------------------------------------------
 
     def error(self, msg, details=''):
-        """Printan error message and stop the processing"""
+        """Print an error message and stop the processing"""
 
         if details:
             self.parser.error(msg + '''
@@ -624,7 +624,7 @@ class GDAL2Tiles(object):
     # -------------------------------------------------------------------------
 
     def progressbar(self, complete=0.0):
-        """Printprogressbar for float value 0..1"""
+        """Print progressbar for float value 0..1"""
 
         gdal.TermProgress_nocb(complete)
 
