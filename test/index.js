@@ -25,7 +25,8 @@
       'Polygon': layerPolygon(map, rc),
       'Countries': layerCountries(map, rc),
       'Bounds': layerBounds(map, rc, img),
-      'Info': layerGeo(map, rc)
+      'Info': layerGeo(map, rc),
+      'Circles': layerCircles(map, rc)
     }).addTo(map)
 
     // the tile layer containing the image generated with gdal2tiles --leaflet ...
@@ -139,6 +140,28 @@
     var layerPolygon = L.polygon([points])
     map.addLayer(layerPolygon)
     return layerPolygon
+  }
+
+  /**
+   * layer drawing some cicles
+   */
+  function layerCircles (map, rc) {
+    const circle = L.circle(rc.unproject([1350, 2150]), { radius: 2e6 })
+
+    function circlePoints ([x, y], r, steps = 360) {
+      var p = []
+      for (var i = 0; i < steps; i++) {
+        p.push(rc.unproject([
+          (x + r * Math.cos(2 * Math.PI * i / steps)),
+          (y + r * Math.sin(2 * Math.PI * i / steps))
+        ]))
+      }
+      return p
+    }
+    const polyline = L.polygon([circlePoints([1550, 2150], 200)])
+    const layer = L.featureGroup([circle, polyline])
+    map.addLayer(layer)
+    return layer
   }
 
   init('map')
