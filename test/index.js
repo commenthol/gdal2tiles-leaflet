@@ -146,8 +146,15 @@
    * layer drawing some cicles
    */
   function layerCircles (map, rc) {
-    const circle = L.circle(rc.unproject([1350, 2150]), { radius: 2e6 })
+    /*
+    // using circle may cause displaying a ellipse at the edges of the image
+    // radius is painful to adjust - simply don't use
+    const circle = L.circle(rc.unproject([200, 1000]), { radius: 1e6 })
+    */
 
+    /*
+    // drawing a circle with a polyline
+    // Not so nice because of the visible steps
     function circlePoints ([x, y], r, steps = 360) {
       var p = []
       for (var i = 0; i < steps; i++) {
@@ -158,8 +165,31 @@
       }
       return p
     }
-    const polyline = L.polygon([circlePoints([1550, 2150], 200)])
-    const layer = L.featureGroup([circle, polyline])
+    const polyline = L.polygon([circlePoints([200, 200], 200)], {
+      fillColor: '#3388ff',
+      color: '#fb0000'
+    })
+    */
+
+    // Custom marker prototype - credits to Arkensor
+    L.CircleMarkerScaling = L.CircleMarker.extend({
+      _project: function () {
+        this._point = this._map.latLngToLayerPoint(this._latlng);
+        this._radius = 2 * this.options.radius * this._map.getZoomScale(this._map.getZoom(), this._map.getMaxZoom());
+        this._updateBounds();
+      }
+    })
+    L.circleMarkerScaling = function (latlng, options) {
+      return new L.CircleMarkerScaling(latlng, options);
+    }
+
+    const custom = L.circleMarkerScaling(rc.unproject([200, 200]), {
+      radius: 200,
+      fillColor: '#3388ff',
+      color: '#fbff2c',
+    })
+
+    const layer = L.featureGroup([/*circle, polyline,*/ custom])
     map.addLayer(layer)
     return layer
   }

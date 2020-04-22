@@ -1,6 +1,6 @@
 /**
  * leaflet plugin for plain image map projection
- * @copyright 2015 commenthol
+ * @copyright 2016- commenthol
  * @license MIT
  */
 /* globals define */
@@ -79,3 +79,4 @@
 
   return L.RasterCoords
 }))
+; // eslint-disable-line semi
